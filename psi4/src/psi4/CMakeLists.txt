@@ -5,11 +5,13 @@ foreach (dir_name libpsi4util liboptions libparallel libciomr libpsio libqt
     add_subdirectory(${dir_name})
 endforeach ()
 
-foreach (dir_name adc ccdensity ccenergy cceom cchbar cclambda ccresponse
-         cctransort cctriples dcft detci dfmp2
+foreach (dir_name adc 
+         detci dfmp2
          dfocc efp_interface findif fisapt fnocc mcscf mrcc
-         occ optking psimrcc sapt scfgrad thermo
+         occ optking sapt scfgrad thermo
          gdma_interface dmrg
         )
     add_subdirectory(${dir_name})
 endforeach ()
+#ccdensity ccenergy cceom cchbar cclambda ccresponse
+#         cctransort cctriples dcft
