@@ -127,18 +127,29 @@ void X2CInt::compute_integrals() {
     std::shared_ptr<OneBodySOInt> tOBI(integral_->so_kinetic());
     std::shared_ptr<OneBodySOInt> vOBI(integral_->so_potential());
     std::shared_ptr<OneBodySOInt> wOBI(integral_->so_rel_potential());
+    std::shared_ptr<OneBodySOInt> wsdOBI(integral_->so_rel_sd_potential());
 
     // Form the one-electron integral matrices from the matrix factory
     sMat = SharedMatrix(soFactory_->create_matrix("Overlap"));
     tMat = SharedMatrix(soFactory_->create_matrix("Kinetic"));
     vMat = SharedMatrix(soFactory_->create_matrix("Potential"));
     wMat = SharedMatrix(soFactory_->create_matrix("Relativistic Potential"));
+    std::vector<SharedMatrix> wsdMat_vec;
+    wsdMat_vec.push_back(soFactory_->create_matrix("Relativistic SD Potential (X)"));
+    wsdMat_vec.push_back(soFactory_->create_matrix("Relativistic SD Potential (Y)"));
+    wsdMat_vec.push_back(soFactory_->create_matrix("Relativistic SD Potential (Z)"));
+    // wsdMat = SharedMatrix(soFactory_->create_matrix("Relativistic SD Potential"));
 
     // Compute the one electron integrals, telling each object where to store the result
     sOBI->compute(sMat);
     tOBI->compute(tMat);
     vOBI->compute(vMat);
     wOBI->compute(wMat);
+    wsdOBI->compute(wsdMat_vec);
+    wMat->print();
+    wsdMat_vec[0]->print();
+    wsdMat_vec[1]->print();
+    wsdMat_vec[2]->print();
 
     // Add any a dipole perturbation
     if ((lambda_[0] != 0.0) or (lambda_[1] != 0) or (lambda_[2] != 0)) {

@@ -61,15 +61,13 @@ RelPotentialInt::RelPotentialInt(std::vector<SphericalTransform>& st, std::share
     buffers_[0] = buffer_;
 }
 
-RelPotentialInt::~RelPotentialInt() {
-    delete[] buffer_;
-}
+RelPotentialInt::~RelPotentialInt() { delete[] buffer_; }
 
 /*
  * This code was originally written by Prakash in the Evangelista lab, but modified
  * by Andy Simmonett to use Libint2.  We need to compute  <p mu |1/r-C | p nu > where
  * p is the del operator; these are easily obtained from second derivative integrals.
-*/
+ */
 void RelPotentialInt::compute_pair(const libint2::Shell& s1, const libint2::Shell& s2) {
     size_t size = s1.size() * s2.size();
     ::memset(buffer_, 0, size * sizeof(double));
@@ -83,18 +81,19 @@ void RelPotentialInt::compute_pair(const libint2::Shell& s1, const libint2::Shel
     //  11   12   13   14   15   16   17   18   19   20  ....
     // AyBx AyBy AyBz AyCx AyCy AyCz AzAz AzBx AzBy AzBz ....
     //
-    const auto &results = engine2_->results();
+    const auto& results = engine2_->results();
     for (int A = 0; A < bs1_->molecule()->natom(); A++) {
-        const auto &mol = *bs1_->molecule();
+        const auto& mol = *bs1_->molecule();
         // Setup the initial field of partial charges
-        engine2_->set_params(std::vector<std::pair<double, std::array<double, 3>>>{{mol.Z(A),{mol.x(A), mol.y(A), mol.z(A)}}});
+        engine2_->set_params(
+            std::vector<std::pair<double, std::array<double, 3>>>{{mol.Z(A), {mol.x(A), mol.y(A), mol.z(A)}}});
         engine2_->compute(s1, s2);
         // Add AxBx
-        std::transform(buffer_, buffer_+size, results[3], buffer_, std::plus<>{});
+        std::transform(buffer_, buffer_ + size, results[3], buffer_, std::plus<>{});
         // Add AyBy
-        std::transform(buffer_, buffer_+size, results[12], buffer_, std::plus<>{});
+        std::transform(buffer_, buffer_ + size, results[12], buffer_, std::plus<>{});
         // Add AzBz
-        std::transform(buffer_, buffer_+size, results[20], buffer_, std::plus<>{});
+        std::transform(buffer_, buffer_ + size, results[20], buffer_, std::plus<>{});
     }
 }
 
@@ -105,6 +104,78 @@ RelPotentialSOInt::RelPotentialSOInt(const std::shared_ptr<OneBodyAOInt>& aoint,
 }
 
 RelPotentialSOInt::RelPotentialSOInt(const std::shared_ptr<OneBodyAOInt>& aoint, const IntegralFactory* fact)
+    : OneBodySOInt(aoint, fact) {
+    natom_ = ob_->basis1()->molecule()->natom();
+}
+
+// Initialize potential_recur_ to +1 basis set angular momentum
+RelSDPotentialInt::RelSDPotentialInt(std::vector<SphericalTransform>& st, std::shared_ptr<BasisSet> bs1,
+                                     std::shared_ptr<BasisSet> bs2, int nderiv)
+    : OneBodyAOInt(st, bs1, bs2, nderiv) {
+    int max_am = std::max(basis1()->max_am(), basis2()->max_am());
+    int max_nprim = std::max(basis1()->max_nprimitive(), basis2()->max_nprimitive());
+
+    if (nderiv == 0) {
+        set_chunks(3);
+        engine2_ = std::make_unique<libint2::Engine>(libint2::Operator::nuclear, max_nprim, max_am, 2);
+    } else {
+        throw PSIEXCEPTION("RelSDPotentialInt: deriv > 0 is not supported.");
+    }
+    buffers_.resize(nchunk_);
+    buffer_ = new double[3 * INT_NCART(max_am) * INT_NCART(max_am)];
+}
+
+RelSDPotentialInt::~RelSDPotentialInt() { delete[] buffer_; }
+
+/*
+ * This code was originally written by Prakash in the Evangelista lab, but modified
+ * by Andy Simmonett to use Libint2.  We need to compute  <p mu |1/r-C | p nu > where
+ * p is the del operator; these are easily obtained from second derivative integrals.
+ */
+void RelSDPotentialInt::compute_pair(const libint2::Shell& s1, const libint2::Shell& s2) {
+    size_t size = s1.size() * s2.size();
+    ::memset(buffer_, 0, 3 * size * sizeof(double));
+
+    // If we only add one center, C, at a time, Libint2 is more memory efficient because
+    // it creates buffers corresponding to each external point charge..  It also yields
+    // predictable ordering of integral buffers, which are organized as follows...
+    //
+    //   0    1    2    3    4    5    6    7    8    9   10
+    // AxAx AxAy AxAz AxBx AxBy AxBz AxCx AxCy AxCz AyAy AyAz
+    //  11   12   13   14   15   16   17   18   19   20  ....
+    // AyBx AyBy AyBz AyCx AyCy AyCz AzAz AzBx AzBy AzBz ....
+    //
+    const auto& results = engine2_->results();
+    for (int A = 0; A < bs1_->molecule()->natom(); A++) {
+        const auto& mol = *bs1_->molecule();
+        // Setup the initial field of partial charges
+        engine2_->set_params(
+            std::vector<std::pair<double, std::array<double, 3>>>{{mol.Z(A), {mol.x(A), mol.y(A), mol.z(A)}}});
+        engine2_->compute(s1, s2);
+        // Add AyBz - AzBy
+        std::transform(buffer_, buffer_ + size, results[13], buffer_, std::plus<>{});
+        std::transform(buffer_, buffer_ + size, results[19], buffer_, std::minus<>{});
+
+        // Add AzBx - AxBz
+        std::transform(buffer_ + size, buffer_ + 2 * size, results[18], buffer_ + size, std::plus<>{});
+        std::transform(buffer_ + size, buffer_ + 2 * size, results[5], buffer_ + size, std::minus<>{});
+
+        // Add AxBy - AyBx
+        std::transform(buffer_ + 2 * size, buffer_ + 3 * size, results[4], buffer_ + 2 * size, std::plus<>{});
+        std::transform(buffer_ + 2 * size, buffer_ + 3 * size, results[11], buffer_ + 2 * size, std::minus<>{});
+    }
+    buffers_[0] = buffer_;
+    buffers_[1] = buffer_ + size;
+    buffers_[2] = buffer_ + 2 * size;
+}
+
+RelSDPotentialSOInt::RelSDPotentialSOInt(const std::shared_ptr<OneBodyAOInt>& aoint,
+                                         const std::shared_ptr<IntegralFactory>& fact)
+    : OneBodySOInt(aoint, fact) {
+    natom_ = ob_->basis1()->molecule()->natom();
+}
+
+RelSDPotentialSOInt::RelSDPotentialSOInt(const std::shared_ptr<OneBodyAOInt>& aoint, const IntegralFactory* fact)
     : OneBodySOInt(aoint, fact) {
     natom_ = ob_->basis1()->molecule()->natom();
 }

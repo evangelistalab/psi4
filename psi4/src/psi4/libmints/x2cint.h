@@ -102,6 +102,8 @@ class PSI_API X2CInt {
     SharedMatrix vMat;
     /// The spin-free relativistic potential (W = pVp) matrix in the orbital basis
     SharedMatrix wMat;
+    /// The spin-dependent relativistic potential (W = pVxp) matrix in the orbital basis
+    SharedMatrix wsdMat;
     /// The X matrix
     SharedMatrix xMat;
     /// The R matrix

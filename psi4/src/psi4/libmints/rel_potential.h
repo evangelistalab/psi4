@@ -49,14 +49,13 @@ class CdSalcList;
  * Use an IntegralFactory to create this object.
  */
 class RelPotentialInt : public OneBodyAOInt {
-
    protected:
-
     /// Matrix of coordinates/charges of partial charges
     SharedMatrix Zxyz_;
 
     /// Computes integrals between two shell objects.
     void compute_pair(const libint2::Shell&, const libint2::Shell&) override;
+
    public:
     /// Constructor. Assumes nuclear centers/charges as the potential
     RelPotentialInt(std::vector<SphericalTransform>&, std::shared_ptr<BasisSet>, std::shared_ptr<BasisSet>,
@@ -76,6 +75,40 @@ class RelPotentialSOInt : public OneBodySOInt {
    public:
     RelPotentialSOInt(const std::shared_ptr<OneBodyAOInt>&, const std::shared_ptr<IntegralFactory>&);
     RelPotentialSOInt(const std::shared_ptr<OneBodyAOInt>&, const IntegralFactory*);
+};
+
+/*! \ingroup MINTS
+ *  \class RelSDPotentialInt
+ *  \brief Computes the spin-dependent part of the relativistic potential integrals.
+ * Use an IntegralFactory to create this object.
+ */
+class RelSDPotentialInt : public OneBodyAOInt {
+   protected:
+    /// Matrix of coordinates/charges of partial charges
+    SharedMatrix Zxyz_;
+
+    /// Computes integrals between two shell objects.
+    void compute_pair(const libint2::Shell&, const libint2::Shell&) override;
+
+   public:
+    /// Constructor. Assumes nuclear centers/charges as the potential
+    RelSDPotentialInt(std::vector<SphericalTransform>&, std::shared_ptr<BasisSet>, std::shared_ptr<BasisSet>,
+                      int deriv = 0);
+    ~RelSDPotentialInt() override;
+
+    /// Set the field of charges
+    void set_charge_field(SharedMatrix Zxyz) { Zxyz_ = Zxyz; }
+
+    /// Get the field of charges
+    SharedMatrix charge_field() const { return Zxyz_; }
+};
+
+class RelSDPotentialSOInt : public OneBodySOInt {
+    int natom_;
+
+   public:
+    RelSDPotentialSOInt(const std::shared_ptr<OneBodyAOInt>&, const std::shared_ptr<IntegralFactory>&);
+    RelSDPotentialSOInt(const std::shared_ptr<OneBodyAOInt>&, const IntegralFactory*);
 };
 
 }  // namespace psi
