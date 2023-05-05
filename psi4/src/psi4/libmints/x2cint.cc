@@ -146,10 +146,6 @@ void X2CInt::compute_integrals() {
     vOBI->compute(vMat);
     wOBI->compute(wMat);
     wsdOBI->compute(wsdMat_vec);
-    wMat->print();
-    wsdMat_vec[0]->print();
-    wsdMat_vec[1]->print();
-    wsdMat_vec[2]->print();
 
     // Add any a dipole perturbation
     if ((lambda_[0] != 0.0) or (lambda_[1] != 0) or (lambda_[2] != 0)) {
@@ -177,6 +173,9 @@ void X2CInt::compute_integrals() {
     tMat->print();
     vMat->print();
     wMat->print();
+    wsdMat_vec[0]->print();
+    wsdMat_vec[1]->print();
+    wsdMat_vec[2]->print();
 //    sMat_cont->print();
 #endif
 }

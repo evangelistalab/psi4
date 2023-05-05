@@ -1,0 +1,21 @@
+#! A general test of the MintsHelper function
+
+molecule mol {
+H 0 0 0
+Li 0 2 0
+}
+
+set {
+scf_type pk
+basis sto-3g
+basis_relativistic sto-3g
+relativistic x2c
+}
+
+scf_e, scf_wfn = energy("hf", return_wfn=True)
+
+mints = MintsHelper(scf_wfn)
+
+pvp = mints.ao_pvp()
+pvxp = mints.ao_pvxp()
+

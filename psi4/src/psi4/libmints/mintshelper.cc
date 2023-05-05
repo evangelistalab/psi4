@@ -720,6 +720,20 @@ SharedMatrix MintsHelper::ao_pvp() {
     return pVp_mat;
 }
 
+std::vector<SharedMatrix> MintsHelper::ao_pvxp() {
+    // Create a vector of matrices with the proper symmetry
+    std::vector<SharedMatrix> pvxp;
+
+    pvxp.push_back(std::make_shared<Matrix>("AO PVXPx", basisset_->nbf(), basisset_->nbf()));
+    pvxp.push_back(std::make_shared<Matrix>("AO PVXPy", basisset_->nbf(), basisset_->nbf()));
+    pvxp.push_back(std::make_shared<Matrix>("AO PVXPz", basisset_->nbf(), basisset_->nbf()));
+
+    std::shared_ptr<OneBodyAOInt> ints(integral_->ao_rel_sd_potential());
+    ints->compute(pvxp);
+
+    return pvxp;
+}
+
 SharedMatrix MintsHelper::ao_dkh(int dkh_order) {
 #ifdef USING_dkh
     MintsHelper decon(get_basisset("BASIS_RELATIVISTIC"));
