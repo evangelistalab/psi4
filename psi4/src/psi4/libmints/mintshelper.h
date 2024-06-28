@@ -301,6 +301,7 @@ class PSI_API MintsHelper {
 #endif
     /// AO pVp Integrals
     SharedMatrix ao_pvp();
+    std::vector<SharedMatrix> so_pvp_vector();
     /// AO DKH Integrals
     SharedMatrix ao_dkh(int dkh_order = -1);
     /// SO DKH Integrals

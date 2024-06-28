@@ -1514,6 +1514,15 @@ std::vector<SharedMatrix> MintsHelper::so_quadrupole() {
     return quadrupole;
 }
 
+std::vector<SharedMatrix> MintsHelper::so_pvp_vector() {
+    std::shared_ptr<OneBodySOInt> wOBI(integral_->so_rel_potential());
+    OperatorSymmetry msymm(OperatorSymmetry::L, molecule_, integral_, factory_);
+    auto wMats = msymm.create_matrices("SO Relativistic Potential");
+    wMats.insert(wMats.begin(), factory_->create_matrix("SO Relativistic Potential"));
+    wOBI->compute(wMats);
+    return wMats;
+}
+
 std::vector<SharedMatrix> MintsHelper::so_traceless_quadrupole() {
     // The matrix factory can create matrices of the correct dimensions...
     OperatorSymmetry msymm(2, molecule_, integral_, factory_);
