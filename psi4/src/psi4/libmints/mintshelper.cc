@@ -710,14 +710,23 @@ SharedMatrix MintsHelper::ao_ecp(std::shared_ptr<BasisSet> bs1, std::shared_ptr<
 }
 #endif
 
-SharedMatrix MintsHelper::ao_pvp() {
+SharedMatrix MintsHelper::ao_pvp(int deriv) {
     std::vector<std::shared_ptr<OneBodyAOInt>> ints_vec;
     for (size_t i = 0; i < nthread_; i++) {
-        ints_vec.push_back(std::shared_ptr<OneBodyAOInt>(integral_->ao_rel_potential()));
+        ints_vec.push_back(std::shared_ptr<OneBodyAOInt>(integral_->ao_rel_potential(deriv)));
     }
     auto pVp_mat = std::make_shared<Matrix>("AO-basis pVp Ints", basisset_->nbf(), basisset_->nbf());
     one_body_ao_computer(ints_vec, pVp_mat, true);
     return pVp_mat;
+}
+
+std::vector<SharedMatrix> MintsHelper::ao_pvp_vector(int deriv) {
+    std::shared_ptr<OneBodyAOInt> wOBI(integral_->ao_rel_potential(deriv));
+    OperatorSymmetry msymm(OperatorSymmetry::L, molecule_, integral_, factory_);
+    auto wMats = msymm.create_matrices("AO Relativistic Potential");
+    wMats.insert(wMats.begin(), factory_->create_matrix("AO Relativistic Potential"));
+    wOBI->compute(wMats);
+    return wMats;
 }
 
 SharedMatrix MintsHelper::ao_dkh(int dkh_order) {
@@ -1514,8 +1523,8 @@ std::vector<SharedMatrix> MintsHelper::so_quadrupole() {
     return quadrupole;
 }
 
-std::vector<SharedMatrix> MintsHelper::so_pvp_vector() {
-    std::shared_ptr<OneBodySOInt> wOBI(integral_->so_rel_potential());
+std::vector<SharedMatrix> MintsHelper::so_pvp_vector(int deriv) {
+    std::shared_ptr<OneBodySOInt> wOBI(integral_->so_rel_potential(deriv));
     OperatorSymmetry msymm(OperatorSymmetry::L, molecule_, integral_, factory_);
     auto wMats = msymm.create_matrices("SO Relativistic Potential");
     wMats.insert(wMats.begin(), factory_->create_matrix("SO Relativistic Potential"));

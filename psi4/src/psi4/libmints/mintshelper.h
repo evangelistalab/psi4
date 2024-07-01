@@ -300,8 +300,9 @@ class PSI_API MintsHelper {
     SharedMatrix ao_ecp(std::shared_ptr<BasisSet>, std::shared_ptr<BasisSet>);
 #endif
     /// AO pVp Integrals
-    SharedMatrix ao_pvp();
-    std::vector<SharedMatrix> so_pvp_vector();
+    SharedMatrix ao_pvp(int deriv = 0);
+    std::vector<SharedMatrix> ao_pvp_vector(int deriv = 0);
+    std::vector<SharedMatrix> so_pvp_vector(int deriv = 0);
     /// AO DKH Integrals
     SharedMatrix ao_dkh(int dkh_order = -1);
     /// SO DKH Integrals

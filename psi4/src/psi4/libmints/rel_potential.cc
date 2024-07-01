@@ -42,9 +42,9 @@ using namespace psi;
 RelPotentialInt::RelPotentialInt(std::vector<SphericalTransform>& st, std::shared_ptr<BasisSet> bs1,
                                  std::shared_ptr<BasisSet> bs2, int deriv)
     : OneBodyAOInt(st, bs1, bs2, deriv) {
-    if (deriv > 0) {
-        throw PSIEXCEPTION("RelPotentialInt: deriv > 0 is not supported.");
-    }
+    // if (deriv > 0) {
+    //     throw PSIEXCEPTION("RelPotentialInt: deriv > 0 is not supported.");
+    // }
 
     if (bs1 != bs2) {
         outfile->Printf("*********************************************************************************************************************\n");
@@ -66,8 +66,28 @@ RelPotentialInt::RelPotentialInt(std::vector<SphericalTransform>& st, std::share
     set_chunks(4);
     engine0_ = std::make_unique<libint2::Engine>(libint2::Operator::opVop, max_nprim, max_am, 0);
     engine0_->set_params(params);
-    // If you want derivatives of these integrals, just take the code from potential.cc's constructor
-    // and change out the operator-type. We don't have these integrals now for want of a use case.
+    
+    if (deriv == 1) {
+        const auto nresults = 4 * 3 * (2 + bs1_->molecule()->natom());
+
+        set_chunks(nresults);
+
+        engine1_ = std::make_unique<libint2::Engine>(libint2::Operator::opVop, max_nprim, max_am, 1);
+        engine1_->set_params(params);
+
+    } else if (deriv == 2) {
+        constexpr auto nopers = libint2::operator_traits<libint2::Operator::opVop>::nopers;
+        const auto nresults = nopers * libint2::num_geometrical_derivatives(bs1_->molecule()->natom(), 2);
+
+        set_chunks(nresults);
+
+        engine1_ = std::make_unique<libint2::Engine>(libint2::Operator::opVop, max_nprim, max_am, 1);
+        engine1_->set_params(params);
+        engine2_ = std::make_unique<libint2::Engine>(libint2::Operator::opVop, max_nprim, max_am, 2);
+        engine2_->set_params(params);
+    } else if (deriv > 2) {
+        throw PSIEXCEPTION("PotentialInt only supports derivatives <= 2.");
+    }
 
     buffer_ = nullptr;
     buffers_.resize(nchunk_);
